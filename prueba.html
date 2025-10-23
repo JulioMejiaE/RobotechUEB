@@ -60,7 +60,7 @@
         // 🟡 VALIDACIÓN DE SESIÓN
         const usuario = JSON.parse(localStorage.getItem('usuario'));
         if (!usuario || !usuario.email) {
-            window.location.href = 'registro.html';
+            window.location.href = 'index.html';
         }
 
         // 🔴 Botón Cerrar Sesión
@@ -68,7 +68,7 @@
             localStorage.removeItem('usuario');
             localStorage.removeItem('documentos');
             localStorage.removeItem('documento_activo');
-            window.location.href = 'registro.html';
+            window.location.href = 'index.html';
         });
 
         // 📄 VARIABLES
