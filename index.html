@@ -134,7 +134,8 @@
         <!-- Formulario Login -->
         <form id="loginForm" class="active">
             <label for="loginEmail">Correo electrónico</label>
-            <input type="email" id="loginEmail" placeholder="Ingrese su correo" required>
+            <input type="email" id="loginEmail" placeholder="Ingrese su correo" pattern="[a-zA-Z0-9._%+-]+@ueb\.edu\.bo"
+                required>
 
             <label for="loginPassword">Contraseña</label>
             <input type="password" id="loginPassword" placeholder="Ingrese su contraseña" required>
@@ -152,7 +153,8 @@
             <input type="text" id="registerName" placeholder="Ingrese su nombre" required>
 
             <label for="registerEmail">Correo electrónico</label>
-            <input type="email" id="registerEmail" placeholder="Ingrese su correo" required>
+            <input type="email" id="registerEmail" placeholder="Ingrese su correo"
+                pattern="[a-zA-Z0-9._%+-]+@ueb\.edu\.bo" required>
 
             <label for="registerPassword">Contraseña</label>
             <input type="password" id="registerPassword" placeholder="Cree una contraseña" required>
@@ -166,10 +168,16 @@
     </div>
 
     <script>
+
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
         const goToRegister = document.getElementById('goToRegister');
         const goToLogin = document.getElementById('goToLogin');
+
+        function esCorreoUEB(correo) {
+            const regex = /^[a-zA-Z0-9._%+-]+@ueb\.edu\.bo$/;
+            return regex.test(correo);
+        }
 
         // Cambiar entre formularios
         goToRegister.addEventListener('click', () => {
@@ -187,6 +195,11 @@
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+
+            if (!esCorreoUEB(email)) {
+                alert('❌ Solo se permiten correos @ueb.edu.bo');
+                return;
+            }
 
             try {
                 const response = await fetch('https://julioescudero.app.n8n.cloud/webhook/08b95ee5-04d0-4d39-b66c-971b8202b6cb  ', {
@@ -231,6 +244,11 @@
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
 
+            if (!esCorreoUEB(email)) {
+                alert('❌ Solo se permiten correos @ueb.edu.bo');
+                return;
+            }
+            
             try {
                 const response = await fetch('https://julioescudero.app.n8n.cloud/webhook/b9013603-d2d8-4337-a3f2-1042d1ea4bf7', {
                     method: 'POST',
