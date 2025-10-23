@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Portal de Acceso</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        /* ==== Fondo general ==== */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #fff 60%, #e63946 60%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* ==== Contenedor principal ==== */
+        .login-container {
+            text-align: center;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 380px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* ==== Logo y título ==== */
+        .login-logo {
+            width: 300px;
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #b71c1c;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ==== Formularios ==== */
+        form {
+            display: none;
+            flex-direction: column;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+        }
+
+        form.active {
+            display: flex;
+        }
+
+        form label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        form input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            transition: border 0.2s;
+        }
+
+        form input:focus {
+            border-color: #e63946;
+            outline: none;
+        }
+
+        /* ==== Botón ==== */
+        .btn-login {
+            background: #e63946;
+            color: #fff;
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #c62828;
+        }
+
+        /* ==== Texto de cambio ==== */
+        .switch-text {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #555;
+            text-align: center;
+        }
+
+        .switch-link {
+            color: #e63946;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .switch-link:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <img src="img/logosinfondo.png" alt="Logo" class="login-logo">
+        <div class="login-title">Portal Estudiantil</div>
+
+        <!-- Formulario Login -->
+        <form id="loginForm" class="active">
+            <label for="loginEmail">Correo electrónico</label>
+            <input type="email" id="loginEmail" placeholder="Ingrese su correo" required>
+
+            <label for="loginPassword">Contraseña</label>
+            <input type="password" id="loginPassword" placeholder="Ingrese su contraseña" required>
+
+            <button type="submit" class="btn-login">Ingresar al Portal</button>
+
+            <div class="switch-text">
+                ¿No tenés cuenta? <span id="goToRegister" class="switch-link">Registrate aquí</span>
+            </div>
+        </form>
+
+        <!-- Formulario Registro -->
+        <form id="registerForm">
+            <label for="registerName">Nombre completo</label>
+            <input type="text" id="registerName" placeholder="Ingrese su nombre" required>
+
+            <label for="registerEmail">Correo electrónico</label>
+            <input type="email" id="registerEmail" placeholder="Ingrese su correo" required>
+
+            <label for="registerPassword">Contraseña</label>
+            <input type="password" id="registerPassword" placeholder="Cree una contraseña" required>
+
+            <button type="submit" class="btn-login">Crear Cuenta</button>
+
+            <div class="switch-text">
+                ¿Ya tenés cuenta? <span id="goToLogin" class="switch-link">Iniciá sesión</span>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const goToRegister = document.getElementById('goToRegister');
+        const goToLogin = document.getElementById('goToLogin');
+
+        // Cambiar entre formularios
+        goToRegister.addEventListener('click', () => {
+            loginForm.classList.remove('active');
+            registerForm.classList.add('active');
+        });
+
+        goToLogin.addEventListener('click', () => {
+            registerForm.classList.remove('active');
+            loginForm.classList.add('active');
+        });
+
+        // ✅ LOGIN
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('https://julioescudero.app.n8n.cloud/webhook/08b95ee5-04d0-4d39-b66c-971b8202b6cb  ', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ Login correcto:', data);
+
+                        // 🔹 Guardamos la sesión en el navegador
+                        localStorage.setItem('usuario', JSON.stringify({
+                            email: email,
+                            nombre: data.nombre || 'Usuario'
+                        }));
+
+                        // 🔹 Redirigimos al chat
+                        window.location.href = '/prueba.html';
+                    } else {
+                        alert('Tu correo o contraseña son incorrectos.');
+                        // Aquí puedes mostrar un mensaje al usuario si lo deseas
+                    }
+                } else {
+                    console.error('❌ Error en login');
+                }
+            } catch (err) {
+                console.error('⚠️ Error de conexión login:', err);
+            }
+
+
+        });
+
+        // ✅ REGISTRO
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('https://julioescudero.app.n8n.cloud/webhook/b9013603-d2d8-4337-a3f2-1042d1ea4bf7', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert('✅ Registro exitoso. Ahora podés iniciar sesión.');
+                    // Ejemplo: volver al login automáticamente
+                    goToLogin.click();
+                } else {
+                    alert('❌ Error en registro');
+                }
+            } catch (err) {
+                console.error('⚠️ Error de conexión registro:', err);
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ROBOTECH - Chat</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <!-- Panel lateral -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="/img/robot.png" alt="Logo" />
+            </div>
+
+            <h1>ROBOTECH</h1>
+            <p class="subtitulo">Tu asistente inteligente de neuroanatomía y anatomía humana</p>
+
+            <div class="documentos">
+                <h3>Documentos cargados</h3>
+                <div class="lista-documentos" id="listaDocs">
+                    <p>No hay documentos cargados</p>
+                </div>
+                <button id="btnLimpiarDocs" class="btn-enviar" style="margin-top:10px;">🗑️ Limpiar documentos</button>
+            </div>
+        </aside>
+
+        <!-- Área de chat -->
+        <main class="chat-section">
+            <header class="chat-header">
+                <h2>CHAT BOT</h2>
+                <button class="logout-btn" id="btnLogout">Cerrar sesión</button>
+            </header>
+
+            <!-- Contenedor del chat -->
+            <div id="chat"></div>
+
+            <!-- Formulario -->
+            <form id="chatForm">
+                <div class="input-container">
+                    <input type="text" id="pregunta" name="pregunta" placeholder="Escribí tu pregunta..." required />
+                    <button type="submit" class="btn-enviar">ENVIAR</button>
+                </div>
+
+                <div class="pdf-container">
+                    <label for="file" class="btn-pdf">
+                        📄
+                        <input type="file" id="file" name="data" accept="application/pdf" hidden />
+                    </label>
+                    <button type="button" id="btnSubirPDF" class="btn-enviar">SUBIR PDF</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        // 🟡 VALIDACIÓN DE SESIÓN
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        if (!usuario || !usuario.email) {
+            window.location.href = 'registro.html';
+        }
+
+        // 🔴 Botón Cerrar Sesión
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('usuario');
+            localStorage.removeItem('documentos');
+            localStorage.removeItem('documento_activo');
+            window.location.href = 'registro.html';
+        });
+
+        // 📄 VARIABLES
+        const chat = document.getElementById('chat');
+        const listaDocs = document.getElementById('listaDocs');
+        const fileInput = document.getElementById('file');
+        const preguntaInput = document.getElementById('pregunta');
+
+        // 🧠 Webhooks de n8n
+        const WEBHOOK_PDF = "https://julioescudero.app.n8n.cloud/webhook/528a2e2e-0c59-4b3b-9125-60a82a8322f5";       // Guardar PDF
+        const WEBHOOK_PREGUNTA = "https://julioescudero.app.n8n.cloud/webhook/0b915cad-e5c9-4f12-8e74-c6825419f23a  "; // Preguntar IA
+        const WEBHOOK_LISTAR = "https://julioescudero.app.n8n.cloud/webhook/listar-pdfs"; // Listar documentos (nuevo flujo n8n)
+
+        let documentos = JSON.parse(localStorage.getItem('documentos')) || [];
+        let documentoActivo = localStorage.getItem('documento_activo') || null;
+
+        // 🟢 Cargar lista de documentos
+        function actualizarLista() {
+            if (documentos.length === 0) {
+                listaDocs.innerHTML = `<p>No hay documentos cargados</p>`;
+                return;
+            }
+
+            listaDocs.innerHTML = documentos.map(doc => `
+        <div class="doc-item ${doc.id == documentoActivo ? 'activo' : ''}" data-id="${doc.id}">
+          📄 ${doc.name}
+        </div>
+      `).join('');
+
+            document.querySelectorAll('.doc-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    documentoActivo = item.dataset.id;
+                    localStorage.setItem('documento_activo', documentoActivo);
+                    actualizarLista();
+                    chat.innerHTML += `<div class="mensaje bot">📚 Has seleccionado el documento: ${item.textContent}</div>`;
+                });
+            });
+        }
+
+        // 🔄 Cargar documentos del usuario desde n8n al iniciar
+        async function cargarDocumentosGuardados() {
+            try {
+                const res = await fetch(WEBHOOK_LISTAR, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: usuario.email })
+                });
+                const docs = await res.json();
+                const documentos = [docs].map((d, i) => ({
+                    id: d.id || i,
+                    name: d.nombre || d.name || 'Documento',
+                }));
+
+                localStorage.setItem('documentos', JSON.stringify(documentos));
+                actualizarLista();
+            } catch (error) {
+                console.error('Error al recuperar documentos:', error);
+            }
+        }
+
+       document.addEventListener('DOMContentLoaded', cargarDocumentosGuardados);
+
+        // 🟡 Subir PDF
+        document.getElementById('btnSubirPDF').addEventListener('click', async () => {
+            if (!fileInput.files[0]) return alert('Selecciona un PDF primero.');
+
+            const formData = new FormData();
+            formData.append('data', fileInput.files[0]);
+            formData.append('email', usuario.email);
+
+            chat.innerHTML += `<div class="mensaje bot">📤 Subiendo PDF...</div>`;
+            chat.scrollTop = chat.scrollHeight;
+
+            try {
+                const resPDF = await fetch(WEBHOOK_PDF, { method: 'POST', body: formData });
+                const data = await resPDF.json();
+
+                if (data && data.id) {
+                    const docId = data.id;
+                    const docName = fileInput.files[0].name;
+
+                    documentos.push({ id: docId, name: docName });
+                    localStorage.setItem('documentos', JSON.stringify(documentos));
+                    documentoActivo = docId;
+                    localStorage.setItem('documento_activo', documentoActivo);
+
+                    chat.innerHTML += `<div class="mensaje bot">✅ PDF "${docName}" guardado correctamente.</div>`;
+                    actualizarLista();
+                } else {
+                    chat.innerHTML += `<div class="mensaje bot">⚠️ PDF subido, pero no se recibió el ID.</div>`;
+                }
+            } catch (error) {
+                chat.innerHTML += `<div class="mensaje bot">⚠️ Error al subir PDF</div>`;
+                console.error(error);
+            }
+        });
+
+        // 💬 Enviar pregunta
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pregunta = preguntaInput.value.trim();
+
+            if (!pregunta) return alert('Escribe una pregunta');
+            if (!documentoActivo) {
+                chat.innerHTML += `<div class="mensaje bot">⚠️ Primero selecciona o subí un PDF.</div>`;
+                return;
+            }
+
+            chat.innerHTML += `<div class="mensaje usuario">${pregunta}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+
+            try {
+                const resPregunta = await fetch(WEBHOOK_PREGUNTA, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pregunta, document_id: documentoActivo })
+                });
+
+                const respuestaIA = await resPregunta.text();
+                chat.innerHTML += `<div class="mensaje bot">🤖 ${respuestaIA}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+                preguntaInput.value = '';
+            } catch (error) {
+                chat.innerHTML += `<div class="mensaje bot">⚠️ Error al enviar la pregunta</div>`;
+                console.error(error);
+            }
+        });
+
+        // 🧹 Limpiar documentos
+        document.getElementById('btnLimpiarDocs').addEventListener('click', () => {
+            if (confirm('¿Seguro que quieres eliminar todos los documentos guardados?')) {
+                localStorage.removeItem('documentos');
+                localStorage.removeItem('documento_activo');
+                documentos = [];
+                documentoActivo = null;
+                actualizarLista();
+                chat.innerHTML += `<div class="mensaje bot">🧹 Se limpiaron todos los documentos.</div>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
