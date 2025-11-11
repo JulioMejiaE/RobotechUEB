@@ -78,9 +78,9 @@
         const preguntaInput = document.getElementById('pregunta');
 
         // 🧠 Webhooks de n8n
-        const WEBHOOK_PDF = "https://julioescudero.app.n8n.cloud/webhook/528a2e2e-0c59-4b3b-9125-60a82a8322f5";       // Guardar PDF
-        const WEBHOOK_PREGUNTA = "https://julioescudero.app.n8n.cloud/webhook/0b915cad-e5c9-4f12-8e74-c6825419f23a  "; // Preguntar IA
-        const WEBHOOK_LISTAR = "https://julioescudero.app.n8n.cloud/webhook/listar-pdfs"; // Listar documentos (nuevo flujo n8n)
+        const WEBHOOK_PDF = "https://juliom.app.n8n.cloud/webhook/528a2e2e-0c59-4b3b-9125-60a82a8322f5";       // Guardar PDF
+        const WEBHOOK_PREGUNTA = "https://juliom.app.n8n.cloud/webhook/0b915cad-e5c9-4f12-8e74-c6825419f23a  "; // Preguntar IA
+        const WEBHOOK_LISTAR = "https://juliom.app.n8n.cloud/webhook/listar-pdfs"; // Listar documentos (nuevo flujo n8n)
 
         let documentos = JSON.parse(localStorage.getItem('documentos')) || [];
         let documentoActivo = localStorage.getItem('documento_activo') || null;
